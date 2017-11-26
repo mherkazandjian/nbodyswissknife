@@ -1,8 +1,9 @@
 from distutils.core import setup, Extension
+import numpy
 
 module1 = Extension(
     "nbodyswissknife.potential_cpu",
-    include_dirs=[],
+    include_dirs=[numpy.get_include()],
     libraries=['pthread', 'gomp'],
     extra_compile_args=['-fno-strict-aliasing', '-fopenmp'],
     sources=['nbodyswissknife/backends/cpu/potential.c']
