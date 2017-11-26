@@ -5,7 +5,7 @@ module1 = Extension(
     include_dirs=[],
     libraries=['pthread', 'gomp'],
     extra_compile_args=['-fno-strict-aliasing', '-fopenmp'],
-    sources=['nbodyswissknife/backends/cpu/exmodmodule.c']
+    sources=['nbodyswissknife/backends/cpu/potential.c']
 )
 
 setup(
