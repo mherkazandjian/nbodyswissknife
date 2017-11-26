@@ -29,6 +29,8 @@ static PyMethodDef potential_cpu_methods[] = {
 };
 
 
+#if PY_MAJOR_VERSION == 2
+
 PyMODINIT_FUNC initpotential_cpu(void)
 {
     PyObject *module;
@@ -36,3 +38,22 @@ PyMODINIT_FUNC initpotential_cpu(void)
     if ( module == NULL )
         return;
 }
+
+#elif PY_MAJOR_VERSION == 3
+
+static struct PyModuleDef potential_cpumodule = {
+    PyModuleDef_HEAD_INIT,
+    "potential_cpu",
+    "module with interface functions for computing potentials",
+    -1,
+    potential_cpu_methods
+};
+
+PyMODINIT_FUNC
+PyInit_potential_cpu(void)
+{
+  return PyModule_Create(&potential_cpumodule);
+}
+
+#endif
+
