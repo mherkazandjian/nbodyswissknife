@@ -40,7 +40,8 @@ pot = potential_cpu.potential(
     y.value,
     z.value,
     m.value,
-    0.0
+    0.0,
+    const.G.value
 )
 
 print('done')

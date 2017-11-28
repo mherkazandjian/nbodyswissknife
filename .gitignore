@@ -39,3 +39,5 @@ pip-log.txt
 
 *.so
 workspace.xml
+nbodyswissknife/backends/cmake-build-debug
+nbodyswissknife/backends/.idea/workspace.xml
