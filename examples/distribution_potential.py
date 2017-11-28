@@ -10,6 +10,8 @@ example script for computing the potential for a bunch of particles
 """
 import ctypes
 import numpy
+numpy.random.seed(1234)
+
 from astropy import units as u
 from astropy import constants as const
 
@@ -43,6 +45,8 @@ pot = potential_cpu.potential(
     0.0,
     const.G.value
 )
+
+print(pot)
 
 print('done')
 

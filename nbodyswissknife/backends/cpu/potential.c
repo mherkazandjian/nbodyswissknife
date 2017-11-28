@@ -6,26 +6,32 @@
 #include <numpy/arrayobject.h>
 #include <omp.h>
 
-double _potential(double *x,
-                  double *y,
-                  double *z,
-                  double *m,
-                  double b,
-                  int n)
+double
+_potential(const double *x,
+           const double *y,
+           const double *z,
+           const double *m,
+           const double b,
+           const double G,
+           const int n)
 {
   double pot = 0.0;
+  const double b2 = b*b;
 
-  printf("n = %d, b = %e\n", n, b);
-
-  for ( int i = 0; i < n; i++ )
+#pragma omp parallel for shared(x, y, z, m) reduction(+:pot)
+  for( int i = 0; i < n; i++ )
   {
-    printf("%05d %-+e %-+e %-+e %-+e\n", i, x[i], y[i], z[i], m[i]);
+    const double _x = x[i], _y = y[i], _z = z[i], _m = m[i];
+    const double r = sqrt(_x*_x + _y*_y + _z*_z + b2);
+
+    pot += _m / r;
   }
 
-  return pot;
+  return - G * pot;
 }
 
-static PyObject* potential(PyObject* self, PyObject *args)
+static
+PyObject* potential(PyObject* self, PyObject *args)
 {
   PyObject *_x=NULL, *_y=NULL, *_z=NULL, *_m=NULL;
   PyArrayObject *x=NULL, *y=NULL, *z=NULL, *m=NULL;
@@ -33,13 +39,16 @@ static PyObject* potential(PyObject* self, PyObject *args)
   PyObject *_b=NULL;
   double b=0.0;
 
+  PyObject *_G=NULL;
+  double G=0.0;
+
   double pot=0.0;
   PyObject *retval = NULL;
 
-  if (!PyArg_ParseTuple(args, "OOOOO", &_x, &_y, &_z, &_m, &_b) )
+  if (!PyArg_ParseTuple(args, "OOOOOO", &_x, &_y, &_z, &_m, &_b, &_G) )
     return NULL;
 
-  x = (PyArrayObject*)PyArray_FROM_OTF(_x, NPY_DOUBLE, NPY_IN_ARRAY);
+  x = (PyArrayObject *)PyArray_FROM_OTF(_x, NPY_DOUBLE, NPY_IN_ARRAY);
   if (x == NULL) return NULL;
 
   y = (PyArrayObject*)PyArray_FROM_OTF(_y, NPY_DOUBLE, NPY_IN_ARRAY);
@@ -52,6 +61,7 @@ static PyObject* potential(PyObject* self, PyObject *args)
   if (m == NULL) goto fail;
 
   b = PyFloat_AsDouble(_b);
+  G = PyFloat_AsDouble(_G);
 
   const int n = PyArray_SIZE(x);   // number of dimensions
 
@@ -61,6 +71,7 @@ static PyObject* potential(PyObject* self, PyObject *args)
       (double *)PyArray_DATA(z),
       (double *)PyArray_DATA(m),
       b,
+      G,
       n
   );
 
@@ -72,33 +83,34 @@ static PyObject* potential(PyObject* self, PyObject *args)
   retval = Py_BuildValue("d", pot);
   return retval;
 
-//  Py_INCREF(Py_None);
-//  return Py_None;
-
  fail:
-  Py_XDECREF(x);
-  Py_XDECREF(y);
-  Py_XDECREF(z);
-  Py_XDECREF(m);
+   Py_XDECREF(x);
+   Py_XDECREF(y);
+   Py_XDECREF(z);
+   Py_XDECREF(m);
 
   return NULL;
 }
 
-// method definitions. setting the method names and argument types and description (docstrings)
+// method definitions for the module
 static PyMethodDef potential_cpu_methods[] = {
     //"PythonName"      C-function Name      Argument presentation    description
-    {"potential",       potential,               METH_VARARGS,           "wrapper around _potential()"},
-    {NULL,              NULL,                    0,                       NULL}             // sentinal
+    {"potential",       potential,           METH_VARARGS,           "wrapper around _potential()"},
+    {NULL,              NULL,                0,                       NULL}             // sentinal
 };
+
 
 
 #if PY_MAJOR_VERSION == 2
 
-PyMODINIT_FUNC initpotential_cpu(void)
+PyMODINIT_FUNC
+initpotential_cpu(void)
 {
   PyObject *module;
   module = Py_InitModule("potential_cpu", potential_cpu_methods);
+
   import_array();
+
   if ( module == NULL )
     return;
 }
@@ -116,7 +128,12 @@ static struct PyModuleDef potential_cpumodule = {
 PyMODINIT_FUNC
 PyInit_potential_cpu(void)
 {
-  return PyModule_Create(&potential_cpumodule);
+  PyObject *module;
+  module = PyModule_Create(&potential_cpumodule);
+
+  import_array();
+
+  return module;
 }
 
 #endif
