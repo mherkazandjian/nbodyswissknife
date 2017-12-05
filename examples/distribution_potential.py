@@ -8,7 +8,6 @@ example script for computing the potential for a bunch of particles
 <seealso>
 </seealso>
 """
-import ctypes
 import numpy
 numpy.random.seed(1234)
 
