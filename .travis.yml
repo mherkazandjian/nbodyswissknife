@@ -1,8 +1,14 @@
+# Run jobs on container-based infrastructure, can be overridden per job
 sudo: false
 language: python
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
 python:
-  - "2.7"
-  - "3.6"
+  - 2.7
+  - 3.6
 install:
   - pip install tox
 script:
