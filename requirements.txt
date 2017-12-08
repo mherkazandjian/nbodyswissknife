@@ -1,5 +1,5 @@
 pytest
 coverage
-pytest-cov
+pytest_cov
 numpy
 astropy
