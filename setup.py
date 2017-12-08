@@ -14,7 +14,11 @@ module1 = Extension(
     "nbodyswissknife.potential_cpu",
     include_dirs=[numpy.get_include()],
     libraries=['pthread', 'gomp'],
-    extra_compile_args=['-fno-strict-aliasing', '-fopenmp'],
+    extra_compile_args=[
+        '-fno-strict-aliasing',
+        '-fopenmp',
+        '-std=gnu11'
+    ],
     sources=['nbodyswissknife/backends/cpu/potential.c']
 )
 
