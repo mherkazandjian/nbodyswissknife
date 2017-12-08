@@ -41,3 +41,4 @@ pip-log.txt
 workspace.xml
 nbodyswissknife/backends/cmake-build-debug
 nbodyswissknife/backends/.idea/workspace.xml
+.cache
