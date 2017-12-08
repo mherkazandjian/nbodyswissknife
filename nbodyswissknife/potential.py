@@ -52,3 +52,55 @@ class Potential(object):
 
         """
         pass
+
+    @property
+    def coordinates(self):
+        """
+
+        :return:
+        """
+        pass
+
+    @property
+    def masses(self):
+        """
+        """
+        pass
+
+    @property
+    def softening(self):
+        """
+
+        :return:
+        """
+        pass
+
+    @property
+    def gauss(self):
+        """
+
+        :return:
+        """
+        pass
+
+    def prepare(self):
+        """
+
+        :return:
+        """
+        pass
+
+    def use(self):
+        """
+
+        :return:
+        """
+        pass
+
+    def compute(self, using='native'):
+        """
+
+        :param using:
+        :return:
+        """
+        pass
