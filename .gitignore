@@ -42,3 +42,7 @@ workspace.xml
 nbodyswissknife/backends/cmake-build-debug
 nbodyswissknife/backends/.idea/workspace.xml
 .cache
+.idea
+nbodyswissknife/__pycache__
+nbodyswissknife/backends/.idea
+tests/__pycache__
