@@ -64,6 +64,7 @@ def test_potential_many_paricles_at_the_origin():
         verbose=True
     )
 
+
 def test_that_potential_native_and_potential_cpu_agree():
 
     n = 1000
