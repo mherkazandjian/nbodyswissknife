@@ -23,11 +23,14 @@ module1 = Extension(
 )
 
 setup(
-    name="nbodyswissknife",
-    version="1.0",
+    name='nbodyswissknife',
+    version='0.0.1',
     description='Package with various handy tools for nbody calculations',
     author='Mher Kazandjian',
+    author_email='mherkazandjian@gmail.com',
     url='https://github.com/mherkazandjian/nbodyswissknife',
+    download_url='https://github.com/mherkazandjian/nbodyswissknife/archive/master.zip',
+    keywords=['physics', 'nbody', 'numerics', 'simulation', 'astrophysics'],
     requires=requirements(),
     packages=['nbodyswissknife'],
     ext_modules=[module1]
