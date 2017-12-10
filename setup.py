@@ -33,6 +33,18 @@ setup(
     keywords=['physics', 'nbody', 'numerics', 'simulation', 'astrophysics'],
     requires=requirements(),
     packages=['nbodyswissknife'],
-    ext_modules=[module1]
+    ext_modules=[module1],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers, Users',
+        'Topic :: Software Development :: Simulation Tools, Libraries',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Operating System :: Unix',
+        'Programming Language :: C, Python'
+    ]
 )
 
