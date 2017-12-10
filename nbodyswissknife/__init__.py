@@ -1,3 +1,6 @@
+from . import potential
+from . import potential_cpu
+
 class Configuration(object):
     """
     The configuration of the module

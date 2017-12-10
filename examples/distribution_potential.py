@@ -13,7 +13,7 @@ import numpy
 from astropy import units as u
 from astropy import constants as const
 
-from nbodyswissknife import potential
+import nbodyswissknife
 
 #
 # sample a plummer sphere with core radius 'b' and mass 'M'
@@ -39,7 +39,7 @@ z = r*numpy.cos(theta)
 #
 # compute the potential of the cluster at a certain distance
 #
-pot = potential.potential_native(
+pot = nbodyswissknife.potential.potential_native(
     numpy.vstack((x, y, z)),
     m,
     soft=0.0,

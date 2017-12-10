@@ -13,18 +13,21 @@ _potential(const double *x,
            const double *m,
            const double b,
            const double G,
+           const double *r_loc,
            const int n)
 {
   double pot = 0.0;
   const double b2 = b*b;
 
-#pragma omp parallel for shared(x, y, z, m) reduction(+:pot)
+#pragma omp parallel for shared(x, y, z, m, r_loc) reduction(+:pot)
   for( int i = 0; i < n; i++ )
   {
-    const double _x = x[i], _y = y[i], _z = z[i], _m = m[i];
+    const double _x = x[i] - r_loc[0];
+    const double _y = y[i] - r_loc[1];
+    const double _z = z[i] - r_loc[2];
     const double r = sqrt(_x*_x + _y*_y + _z*_z + b2);
 
-    pot += _m / r;
+    pot += m[i] / r;
   }
 
   return - G * pot;
@@ -45,7 +48,10 @@ PyObject* potential(PyObject* self, PyObject *args)
   double pot=0.0;
   PyObject *retval = NULL;
 
-  if (!PyArg_ParseTuple(args, "OOOOOO", &_x, &_y, &_z, &_m, &_b, &_G) )
+  PyObject *_r_loc=NULL;
+  PyArrayObject *r_loc=NULL;
+
+  if (!PyArg_ParseTuple(args, "OOOOOOO", &_x, &_y, &_z, &_m, &_b, &_G, &_r_loc))
     return NULL;
 
   x = (PyArrayObject *)PyArray_FROM_OTF(_x, NPY_DOUBLE, NPY_IN_ARRAY);
@@ -63,7 +69,10 @@ PyObject* potential(PyObject* self, PyObject *args)
   b = PyFloat_AsDouble(_b);
   G = PyFloat_AsDouble(_G);
 
-  const int n = PyArray_SIZE(x);   // number of dimensions
+  r_loc = (PyArrayObject*)PyArray_FROM_OTF(_r_loc, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (r_loc == NULL) goto fail;
+
+  const int n = PyArray_SIZE(x);   // number of points
 
   pot = _potential(
       (double *)PyArray_DATA(x),
@@ -72,6 +81,7 @@ PyObject* potential(PyObject* self, PyObject *args)
       (double *)PyArray_DATA(m),
       b,
       G,
+      (double *)PyArray_DATA(r_loc),
       n
   );
 
@@ -79,6 +89,7 @@ PyObject* potential(PyObject* self, PyObject *args)
   Py_DECREF(y);
   Py_DECREF(z);
   Py_DECREF(m);
+  Py_DECREF(r_loc);
 
   retval = Py_BuildValue("d", pot);
   return retval;
@@ -88,6 +99,7 @@ PyObject* potential(PyObject* self, PyObject *args)
    Py_XDECREF(y);
    Py_XDECREF(z);
    Py_XDECREF(m);
+   Py_DECREF(r_loc);
 
   return NULL;
 }

@@ -1,12 +1,12 @@
 # coding=utf-8
 """test suite for testing the potential module"""
 import numpy
-from nbodyswissknife import potential
+import nbodyswissknife
 
 
 def test_single_particle_potential_at_the_origin():
 
-    pot = potential.potential_native(
+    pot = nbodyswissknife.potential.potential_native(
         coords=numpy.array([0.0, 0.0, 0.0]).reshape(3, 1),
         mass=1.0,
         soft=0.0,
@@ -20,7 +20,7 @@ def test_single_particle_potential_at_the_origin():
 
 def test_single_particle_potential_with_softening():
 
-    pot = potential.potential_native(
+    pot = nbodyswissknife.potential.potential_native(
         coords=numpy.array([0.0, 0.0, 0.0]).reshape(3, 1),
         mass=1.0,
         soft=1.0,
@@ -41,7 +41,7 @@ def test_potential_many_paricles_at_the_origin():
     gauss = 2.1
     r_loc = [1.0, 2.0, 3.0]
 
-    pot = potential.potential_native(
+    pot = nbodyswissknife.potential.potential_native(
         coords=numpy.repeat(origin, n_part).reshape(3, n_part),
         mass=numpy.ones(n_part, 'f8')*mass,
         soft=soft,
@@ -62,4 +62,38 @@ def test_potential_many_paricles_at_the_origin():
         rtol=1.0e-6,
         atol=0.0,
         verbose=True
+    )
+
+def test_that_potential_native_and_potential_cpu_agree():
+
+    n = 1000
+    b = 5.3
+    G = 8.22
+    r_loc = numpy.array([1.0, 2.0, 3.0]).reshape(3, 1)
+
+    m = numpy.random.rand(n)
+    x = numpy.random.rand(n)
+    y = numpy.random.rand(n)
+    z = numpy.random.rand(n)
+
+    pot_native = nbodyswissknife.potential.potential_native(
+        numpy.vstack((x, y, z)),
+        m,
+        soft=b,
+        gauss=G,
+        location=r_loc,
+    )
+
+    pot_cpu = nbodyswissknife.potential_cpu.potential(
+        x, y, z,
+        m,
+        b,
+        G,
+        r_loc,
+    )
+
+    numpy.testing.assert_allclose(
+        pot_cpu,
+        pot_native,
+        rtol=1.0e-14
     )
