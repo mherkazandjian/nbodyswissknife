@@ -47,7 +47,9 @@ _potential_multiple_locations(const double *x,
                               const double *m,
                               const double b,
                               const double G,
-                              const double *locs,
+                              const double *x_locs,
+                              const double *y_locs,
+                              const double *z_locs,
                               const int n,
                               const int n_locs,
                               double *pots)
@@ -55,18 +57,25 @@ _potential_multiple_locations(const double *x,
   double pot = 0.0;
   const double b2 = b*b;
 
-#pragma omp parallel for shared(x, y, z, m, locs, pots)
-  for( int i = 0; i < n; i++ )
+  for( int k = 0; k < n_locs; k++ )
   {
-    const double _x = x[i] - pots[0];
-    const double _y = y[i] - pots[1];
-    const double _z = z[i] - pots[2];
-    const double r = sqrt(_x*_x + _y*_y + _z*_z + b2);
 
-    pots[i] += -G * m[i] / r;
+    const double _x_loc = x_locs[k], _y_loc = y_locs[k], _z_loc = z_locs[k];
+    double pot = 0.0;
+
+    #pragma omp parallel for shared(x, y, z, m, pots) reduction(+:pot)
+    for( int i = 0; i < n; i++ )
+    {
+      const double _x = x[i] - _x_loc;
+      const double _y = y[i] - _y_loc;
+      const double _z = z[i] - _z_loc;
+      const double r = sqrt(_x*_x + _y*_y + _z*_z + b2);
+
+      pot += m[i] / r;
+    }
+    pots[k] = -G * pot;
+
   }
-
-  return;
 }
 
 /*
@@ -156,15 +165,16 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
   PyObject *_G=NULL;
   double G=0.0;
 
-  PyObject *_locs=NULL;
-  PyArrayObject *locs=NULL;
+  PyObject *_x_locs=NULL, *_y_locs=NULL, *_z_locs=NULL;
+  PyArrayObject *x_locs=NULL, *y_locs=NULL, *z_locs=NULL;
 
   PyObject *_pots=NULL;
   PyArrayObject *pots=NULL;
 
   if (!PyArg_ParseTuple(args,
-                        "OOOOOOOO",
-                        &_x, &_y, &_z, &_m, &_b, &_G, &_locs, &pots))
+                        "OOOOOOOOOO",
+                        &_x, &_y, &_z, &_m, &_b, &_G,
+                        &_x_locs, &_y_locs, &_z_locs, &_pots))
     return NULL;
 
   x = (PyArrayObject *)PyArray_FROM_OTF(_x, NPY_DOUBLE, NPY_IN_ARRAY);
@@ -182,15 +192,21 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
   b = PyFloat_AsDouble(_b);
   G = PyFloat_AsDouble(_G);
 
-  locs = (PyArrayObject*)PyArray_FROM_OTF(_locs, NPY_DOUBLE, NPY_IN_ARRAY);
-  if (locs == NULL) goto fail;
+  x_locs = (PyArrayObject*)PyArray_FROM_OTF(_x_locs, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (x_locs == NULL) goto fail;
+
+  y_locs = (PyArrayObject*)PyArray_FROM_OTF(_y_locs, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (y_locs == NULL) goto fail;
+
+  z_locs = (PyArrayObject*)PyArray_FROM_OTF(_z_locs, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (z_locs == NULL) goto fail;
 
   pots = (PyArrayObject*)PyArray_FROM_OTF(_pots, NPY_DOUBLE, NPY_INOUT_ARRAY);
   if (pots == NULL) goto fail;
 
 
-  const int n = PyArray_SIZE(x);        // number of data points
-  const int n_locs = PyArray_SIZE(x);   // number of location points
+  const int n = PyArray_SIZE(x);             // number of data points
+  const int n_locs = PyArray_SIZE(x_locs);   // number of location points
 
   _potential_multiple_locations(
       (double *)PyArray_DATA(x),
@@ -199,7 +215,9 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
       (double *)PyArray_DATA(m),
       b,
       G,
-      (double *)PyArray_DATA(locs),
+      (double *)PyArray_DATA(x_locs),
+      (double *)PyArray_DATA(y_locs),
+      (double *)PyArray_DATA(z_locs),
       n,
       n_locs,
       (double *)PyArray_DATA(pots)
@@ -209,7 +227,9 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
   Py_DECREF(y);
   Py_DECREF(z);
   Py_DECREF(m);
-  Py_DECREF(locs);
+  Py_DECREF(x_locs);
+  Py_DECREF(y_locs);
+  Py_DECREF(z_locs);
   Py_DECREF(pots);
 
   return Py_None;
@@ -219,7 +239,9 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
   Py_XDECREF(y);
   Py_XDECREF(z);
   Py_XDECREF(m);
-  Py_DECREF(locs);
+  Py_DECREF(x_locs);
+  Py_DECREF(y_locs);
+  Py_DECREF(z_locs);
   Py_DECREF(pots);
 
   return NULL;

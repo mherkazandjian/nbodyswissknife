@@ -98,3 +98,59 @@ def test_that_potential_native_and_potential_cpu_agree():
         pot_native,
         rtol=1.0e-14
     )
+
+
+def test_that_potential_cpu_at_multiple_locations_is_computed_correctly():
+
+    n = 100
+    b = 5.3
+    G = 8.22
+
+    m = numpy.random.rand(n)
+    x = numpy.random.rand(n)
+    y = numpy.random.rand(n)
+    z = numpy.random.rand(n)
+
+    locations = numpy.meshgrid(
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 5),
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 8),
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 3),
+    )
+
+    pot = numpy.zeros_like(locations[0]).flatten()
+
+    nbodyswissknife.potential_cpu.potential_multiple_locations(
+        x, y, z,
+        m,
+        b,
+        G,
+        locations[0].flatten(),
+        locations[1].flatten(),
+        locations[2].flatten(),
+        pot
+    )
+    pot = pot.reshape(locations[0].shape)
+
+    for pot_cpu, loc in zip(pot.flatten(),
+                            numpy.vstack((locations[0].flatten(),
+                                          locations[1].flatten(),
+                                          locations[2].flatten())).T):
+
+        pot_native = nbodyswissknife.potential.potential_native(
+            numpy.vstack((x, y, z)),
+            m,
+            soft=b,
+            gauss=G,
+            location=loc,
+        )
+
+        numpy.testing.assert_allclose(
+            pot_cpu,
+            pot_native,
+            rtol=1.0e-14
+        )
+        # print('{:e}\n{:e}\n{:e}\n----------'.format(
+        #     pot_cpu,
+        #     pot_native,
+        #     1.0 - pot_cpu / pot_native)
+        # )
