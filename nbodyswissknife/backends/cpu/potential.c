@@ -54,16 +54,15 @@ _potential_multiple_locations(const double *x,
                               const int n_locs,
                               double *pots)
 {
-  double pot = 0.0;
   const double b2 = b*b;
 
   for( int k = 0; k < n_locs; k++ )
   {
 
     const double _x_loc = x_locs[k], _y_loc = y_locs[k], _z_loc = z_locs[k];
-    double pot = 0.0;
+    double pot = pots[k] = 0.0;
 
-    #pragma omp parallel for shared(x, y, z, m, pots) reduction(+:pot)
+#pragma omp parallel for shared(x, y, z, m, pots) reduction(+:pot)
     for( int i = 0; i < n; i++ )
     {
       const double _x = x[i] - _x_loc;
@@ -77,6 +76,46 @@ _potential_multiple_locations(const double *x,
 
   }
 }
+
+/*
+ *
+ */
+void
+_potential_grid(const double *x,
+                const double *y,
+                const double *z,
+                const double *m,
+                const double b,
+                const double G,
+                const int n,
+                double *pots)
+{
+  const double b2 = b*b;
+
+  for( int k = 0; k < n; k++ )
+  {
+
+    const double _x_loc = x[k], _y_loc = y[k], _z_loc = z[k];
+    double pot = pots[k] = 0.0;
+
+#pragma omp parallel for shared(x, y, z, m, pots) reduction(+:pot)
+    for( int i = 0; i < n; i++ )
+    {
+      if ( i == k)
+        continue;
+
+      const double _x = x[i] - _x_loc;
+      const double _y = y[i] - _y_loc;
+      const double _z = z[i] - _z_loc;
+      const double r = sqrt(_x*_x + _y*_y + _z*_z + b2);
+
+      pot += m[i] / r;
+    }
+    pots[k] = -G * pot;
+
+  }
+}
+
 
 /*
  *
@@ -248,11 +287,81 @@ PyObject* potential_multiple_locations(PyObject* self, PyObject *args)
 }
 
 
+static
+PyObject* potential_grid(PyObject* self, PyObject *args)
+{
+  PyObject *_x=NULL, *_y=NULL, *_z=NULL, *_m=NULL;
+  PyArrayObject *x=NULL, *y=NULL, *z=NULL, *m=NULL;
+
+  PyObject *_b=NULL;
+  double b=0.0;
+
+  PyObject *_G=NULL;
+  double G=0.0;
+
+  PyObject *_pots=NULL;
+  PyArrayObject *pots=NULL;
+
+  if (!PyArg_ParseTuple(args, "OOOOOOO", &_x, &_y, &_z, &_m, &_b, &_G, &_pots))
+    return NULL;
+
+  x = (PyArrayObject *)PyArray_FROM_OTF(_x, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (x == NULL) return NULL;
+
+  y = (PyArrayObject*)PyArray_FROM_OTF(_y, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (y == NULL) goto fail;
+
+  z = (PyArrayObject*)PyArray_FROM_OTF(_z, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (z == NULL) goto fail;
+
+  m = (PyArrayObject*)PyArray_FROM_OTF(_m, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (m == NULL) goto fail;
+
+  b = PyFloat_AsDouble(_b);
+  G = PyFloat_AsDouble(_G);
+
+  pots = (PyArrayObject*)PyArray_FROM_OTF(_pots, NPY_DOUBLE, NPY_INOUT_ARRAY);
+  if (pots == NULL) goto fail;
+
+
+  const int n = PyArray_SIZE(x);             // number of data points
+
+  _potential_grid(
+      (double *)PyArray_DATA(x),
+      (double *)PyArray_DATA(y),
+      (double *)PyArray_DATA(z),
+      (double *)PyArray_DATA(m),
+      b,
+      G,
+      n,
+      (double *)PyArray_DATA(pots)
+  );
+
+  Py_DECREF(x);
+  Py_DECREF(y);
+  Py_DECREF(z);
+  Py_DECREF(m);
+  Py_DECREF(pots);
+
+  return Py_None;
+
+  fail:
+  Py_XDECREF(x);
+  Py_XDECREF(y);
+  Py_XDECREF(z);
+  Py_XDECREF(m);
+  Py_DECREF(pots);
+
+  return NULL;
+}
+
+
 // method definitions for the module
 static PyMethodDef potential_cpu_methods[] = {
     //"PythonName"                         C-function Name                         Argument presentation    description
     {"potential",                          potential,                              METH_VARARGS,           "wrapper around _potential"},
     {"potential_multiple_locations",       potential_multiple_locations,           METH_VARARGS,           "wrapper around _potential_multiple_locations"},
+    {"potential_grid",                     potential_grid,                         METH_VARARGS,           "wrapper around _potential_grid"},
     {NULL,                                 NULL,                                   0,                       NULL}             // sentinal
 };
 

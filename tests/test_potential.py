@@ -154,3 +154,64 @@ def test_that_potential_cpu_at_multiple_locations_is_computed_correctly():
         #     pot_native,
         #     1.0 - pot_cpu / pot_native)
         # )
+
+
+def test_that_potential_cpu_grid_is_computed_correctly():
+
+    G = 8.22
+
+    locations = numpy.meshgrid(
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 5),
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 8),
+        numpy.linspace(-numpy.random.rand(), numpy.random.rand(), 3),
+    )
+    x_grid, y_grid, z_grid = locations
+    m_grid = numpy.random.rand(x_grid.size).reshape(x_grid.shape)
+
+    pot = numpy.zeros_like(x_grid).flatten()
+
+    nbodyswissknife.potential_cpu.potential_grid(
+        x_grid.flatten(), y_grid.flatten(), z_grid.flatten(),
+        m_grid.flatten(),
+        0.0,
+        G,
+        pot
+    )
+    pot = pot.reshape(locations[0].shape)
+
+    for i, (pot_cpu, loc) in enumerate(zip(pot.flatten(),
+                                           numpy.vstack((x_grid.flatten(),
+                                                         y_grid.flatten(),
+                                                         z_grid.flatten())).T)):
+
+        inds = numpy.hstack(
+            (
+                numpy.arange(0, i),
+                numpy.arange(i+1, x_grid.size)
+            )
+        )
+
+        pot_native = nbodyswissknife.potential.potential_native(
+            numpy.vstack(
+                (
+                    x_grid.flatten()[inds],
+                    y_grid.flatten()[inds],
+                    z_grid.flatten()[inds]
+                )
+            ),
+            m_grid.flatten()[inds],
+            soft=0.0,
+            gauss=G,
+            location=loc,
+        )
+
+        numpy.testing.assert_allclose(
+            pot_cpu,
+            pot_native,
+            rtol=1.0e-14
+        )
+        # print('{:e}\n{:e}\n{:e}\n----------'.format(
+        #     pot_cpu,
+        #     pot_native,
+        #     1.0 - pot_cpu / pot_native)
+        # )
