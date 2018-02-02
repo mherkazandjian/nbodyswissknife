@@ -18,7 +18,7 @@ import nbodyswissknife
 #
 # sample a plummer sphere with core radius 'b' and mass 'M'
 #
-n = 1000                   # number of particles
+n = 10000                   # number of particles
 b = 5.3 * u.pc             # scale length of the plummer model
 M = 132.0 * const.M_sun    # the mass of the cluster
 G = const.G                # gravitational constant
@@ -40,22 +40,22 @@ z = r*numpy.cos(theta)
 # compute the potential of the cluster at a certain distance
 #
 pot = nbodyswissknife.potential.potential_native(
-    numpy.vstack((x, y, z)),
-    m,
+    numpy.vstack((x.to('m'), y.to('m'), z.to('m'))).value,
+    m.to('kg').value,
     soft=0.0,
-    gauss=G,
-    location=r_loc,
+    gauss=G.value,
+    location=r_loc.to('m').value,
 )
 
-pot_theoretical_plummer_at_r_loc = - G * M / numpy.sqrt(
-    numpy.linalg.norm(r_loc)**2 + b.value**2
-)
+pot_theoretical_plummer_at_r_loc = (
+    - G * M / numpy.sqrt(((numpy.linalg.norm(r_loc))**2)*r_loc.unit**2 + b ** 2)
+).to('m**2 / s**2').value
 
 print('computed potential at r_loc    = ', pot)
 print('theoretical potential at r_loc = ', pot_theoretical_plummer_at_r_loc)
 print(
     'relative difference          = ',
-    1.0 - (pot / pot_theoretical_plummer_at_r_loc).value
+    1.0 - (pot / pot_theoretical_plummer_at_r_loc)
 )
 
 print(pot)
