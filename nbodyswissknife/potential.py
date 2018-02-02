@@ -85,6 +85,32 @@ def potential_energy_native(coords, mass, soft, gauss):
     return 0.5 * potential_energy
 
 
+def potential_energy_particles_native(gravitationl_constant,
+                                      softening,
+                                      coords,
+                                      masses):
+    """
+    Calculate the potential energy of a bunch of particles using native code
+
+    :param float gravitationl_constant: the gravitational constant
+    :param ndarray coords: the coordinates (x, y, z) of shape (n_particles, 3)
+    :param float softening: the softening length
+    :param ndarray masses: The masses of the particles of shape (n_particles)
+    :return: float: the potential at "location"
+    """
+    potential_energy = 0.0
+    for i in range(masses.size):
+        pos_i = coords[:, i]
+        mass_i = masses[i]
+        for j in range(i + 1, masses.size):
+            pos_j = coords[:, j]
+            mass_j = masses[j]
+            r_diff = numpy.sqrt(((pos_i - pos_j)**2).sum() + softening**2)
+            potential_energy += mass_i * mass_j / r_diff
+
+    return - gravitationl_constant * potential_energy
+
+
 def potential_cpu():
     pass
 
