@@ -18,7 +18,7 @@ from nbodyswissknife import potential
 #
 # set the parameters of the model
 #
-n = 100                   # number of particles
+n = 1000                   # number of particles
 b = 5.3 * u.pc            # scale length of the plummer model
 M = 132.0 * const.M_sun   # the mass of the cluster
 G = const.G               # gravitational constant
@@ -39,19 +39,21 @@ z = r*numpy.cos(theta)
 # compute the potential energy of the cluster at a certain distance
 #
 pot_energy = potential.potential_energy_native(
-    numpy.vstack((x, y, z)).value,
-    m.value,
+    numpy.vstack((x.to('m'), y.to('m'), z.to('m'))).value,
+    m.to('kg').value,
     soft=0.0,
-    gauss=G
+    gauss=G.value
 )
 
-pot_energy_theoretical_plummer = - 3.0*numpy.pi*G*M**2 / (32.0*b)
+pot_energy_theoretical_plummer = (
+    - 3.0*numpy.pi*G*M**2 / (32.0*b)
+).to('kg m2 / s2').value
 
 print('computed potential energy    = ', pot_energy)
 print('theoretical potential energy = ', pot_energy_theoretical_plummer)
 print(
     'relative difference          = ',
-    1.0 - (pot_energy / pot_energy_theoretical_plummer).value
+    1.0 - (pot_energy / pot_energy_theoretical_plummer)
 )
 
 print('done')
