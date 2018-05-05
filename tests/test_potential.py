@@ -1,6 +1,7 @@
 # coding=utf-8
 """test suite for testing the potential module"""
 import numpy
+from numpy.random import rand
 import nbodyswissknife
 
 
@@ -215,3 +216,39 @@ def test_that_potential_cpu_grid_is_computed_correctly():
         #     pot_native,
         #     1.0 - pot_cpu / pot_native)
         # )
+
+
+def test_that_the_potential_of_particles_on_an_circle_is_computed_correctly_along_z_axis():
+
+    n_part = 1000
+
+    mass_ring = rand()
+    radius_ring = rand()
+    soft = 0.0
+    gauss = rand()
+    z_loc = rand()
+
+    r_loc = [0.0, 0.0, z_loc]
+
+    theta = numpy.linspace(0.0, 2.0*numpy.pi, n_part)
+    x, y = radius_ring*numpy.cos(theta), radius_ring*numpy.sin(theta)
+    z = numpy.zeros_like(theta)
+    m = numpy.ones_like(theta)*(mass_ring / n_part)
+
+    pot_computed = nbodyswissknife.potential_cpu.potential(
+        x, y, z,
+        m,
+        soft,
+        gauss,
+        r_loc,
+    )
+
+    pot_expected = - gauss * mass_ring / numpy.sqrt(radius_ring**2 + z_loc**2)
+
+    numpy.testing.assert_allclose(
+        pot_expected,
+        pot_computed,
+        rtol=1.0e-10,
+        atol=0.0,
+        verbose=True
+    )
